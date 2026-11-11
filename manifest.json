@@ -1,6 +1,6 @@
 {
-  "name": "SUPAOO학교 클라우드",
-  "short_name": "SUPAOO학교클라우드",
+  "name": "순천청암고등학교 클라우드",
+  "short_name": "순천청암고등학교클라우드",
   "start_url": "./index.html",   /* 👈 정확한 파일명 지정 */
   "scope": "./",                  /* 👈 앱이 작동할 범위를 현재 폴더 기준으로 제한 */
   "display": "standalone",
