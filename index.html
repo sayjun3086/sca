@@ -1,0 +1,1259 @@
+
+
+<!-- ========================================================================= -->
+<!-- index.html (GitHub 정적 호스팅용 SPA 메인 프레임워크 + PWA 설치 통합 화면) -->
+<!-- ========================================================================= -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>클라우드</title>
+  <base target="_self">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- [수정] GAS LibBase_spa.FN_file_include 대신 정적 CSS 파일 로드 -->
+  <link rel="stylesheet" href="LibBase_spa.css">
+
+  <!-- [추가] 기존 github_index.txt의 PWA 바로가기 설치 모달 전용 스타일 유지 -->
+  <style>
+    /* 팝업 모달 공통 배경 */
+    .modal-overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.5); z-index: 99999; display: none; 
+      justify-content: center; align-items: center; padding: 20px; 
+      box-sizing: border-box; backdrop-filter: blur(3px); font-family: sans-serif; 
+    }
+
+    /* 모달 본체 박스 */
+    .modal-content { 
+      background: white; padding: 30px; border-radius: 20px; max-width: 420px; width: 100%;       
+      box-sizing: border-box; text-align: center; line-height: 1.6; font-size: 15px; color: #333; 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: modalFadeIn 0.3s ease-out; 
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-content b { color: #4A90E2; }
+    .modal-btn { display: block; width: 100%; margin-top: 12px; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
+    .action-btn { background: #4A90E2; color: white; }
+    .action-btn:hover { background: #357ABD; }
+    .close-btn { background: #e9ecef; color: #495057; margin-top: 8px; }
+    .close-btn:hover { background: #dee2e6; }
+  </style>
+
+  <!-- [추가] 학교별 환경설정 스크립트(SCA_BASE.js) 로드 -->
+  <script src="SCA_BASE.js"></script>
+</head>
+<body>
+
+  <!-- [추가] 기존 github_index.txt의 PWA 앱/바로가기 설치 안내 모달 2종 통합 -->
+  <div id="install-banner" class="modal-overlay">
+    <div class="modal-content">
+      <p id="banner-text" style="margin: 0 0 20px 0; font-size: 16px;"></p>
+      <button id="install-btn" class="modal-btn action-btn">지금 설치하기</button>
+      <button class="modal-btn close-btn" onclick="document.getElementById('install-banner').style.display='none'">다음에 하기</button>
+    </div>
+  </div>
+
+  <div id="manual-guide-modal" class="modal-overlay">
+    <div class="modal-content">
+      <p id="guideMessage" style="margin: 0; text-align: left;"></p>
+      <button class="modal-btn close-btn" onclick="document.getElementById('manual-guide-modal').style.display='none'">확인 후 닫기</button>
+    </div>
+  </div>
+
+  <header class="top-biz-header">
+    <div class="header-container">
+      <!-- [수정] GAS 템플릿(CFG.schoolName) 대신 JS로 즉시 바인딩하기 위해 id="headerSchoolName" 부여 -->
+      <div class="header-logo"><span id="headerSchoolName"></span> <span style="font-weight: 400; opacity: 0.7;">CLOUD SERVICE</span></div>
+    </div>
+  </header>
+
+  <nav id="dynamicMenuBar" class="win-toolbar"></nav>
+
+  <div id="screen-overlay" class="screen-overlay active">
+    <div class="spinner2"></div>
+  </div>
+
+
+  <div id="customErrorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10001;">
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 8px; text-align: center; min-width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+          <p id="errorMessage" style="margin: 20px 0; font-size: 16px; line-height: 1.5;"></p>
+          <div id="modalButtons">
+              <button id="modalConfirmBtn" style="width: 120px; background: #34495e; color: white; border: none; padding: 10px 25px; border-radius: 4px; cursor: pointer; transition: 0.2s;">확인</button>
+              <button id="modalCancelBtn" style="width: 120px; background: #bdc3c7; color: black; border: none; padding: 10px 25px; border-radius: 4px; cursor: pointer; display: none; transition: 0.2s;">취소</button>
+          </div>
+      </div>
+  </div>
+
+  <div class="info-wrapper">
+    <div id="info-bar_1" class="info-bar">
+      <span class="user-name">👤 환영합니다.</span>
+      <div class="btn-group-tree">
+        <button class="btn-tree w-a9" onclick="navigateTo(APP_STATE.portalCode)">포털홈가기</button>
+        <button class="btn-tree w-b1" onclick="requestInstallModal()">바로가기앱설치</button>
+      </div>
+    </div>
+    
+    <div id="info-bar_2" class="info-bar" style="display: none;">
+      <span class="user-name" id="loggedInUserName">👤 방문자님 반갑습니다.</span>
+      <div class="btn-group-tree">
+        <a class="btn-tree w-a7" onclick="navigateTo(APP_STATE.mainmenuCode);" style="cursor: pointer;">메인메뉴</a>
+        <a class="btn-logout w-a7" onclick="handleSpaLogout();" style="cursor: pointer;">로그아웃</a>
+      </div>
+    </div>
+
+    <div id="gongContainer" style="display: none;">
+      <table class="gong-table" id="gongTable">
+        <thead id="gongHead"></thead>
+        <tbody id="gongBody"></tbody>
+      </table>
+    </div>
+  </div>    
+
+  <div class="main-wrapper">
+    <div id="spa-app-container">
+      <div class="title-area">
+        <h2 class="page-title" id="pageTitleText">OO 클라우드 포털</h2>
+      </div>
+      <div id="spa-module-content"></div>
+    </div>
+  </div>
+
+  <div class="copyright-wrapper">
+    <!-- [수정] GAS 템플릿(CFG.copyRight) 대신 JS로 즉시 바인딩하기 위해 id="footerCopyright" 부여 -->
+    <span id="footerCopyright"></span>
+  </div>  
+
+
+  <!-- LibBase_spa 내부에 포함된 25_Common_Script.html -->
+  <script>
+
+    // =========================================================================
+    // 보안 및 유틸리티 헬퍼 함수
+    // =========================================================================
+    // XSS 공격 방어용 이스케이프 함수
+    function escapeHtml(unsafe) {
+      if (!unsafe) return "";
+      return String(unsafe)
+           .replace(/&/g, "&amp;")
+           .replace(/</g, "&lt;")
+           .replace(/>/g, "&gt;")
+           .replace(/"/g, "&quot;")
+           .replace(/'/g, "&#039;");
+    }
+
+    // ⭐️ [신규] URL을 안전하고 짧은 16진수(Hex) 해시값으로 변환하는 함수
+    function getUrlToHexHash(url) {
+      let hash = 0;
+      for (let i = 0; i < url.length; i++) {
+        hash = ((hash << 5) - hash) + url.charCodeAt(i);
+        hash |= 0; // 32비트 정수로 강제 변환
+      }
+      // 부호 없는 32비트 정수를 16진수로 변환하고 윈도우 이름용 접두어 부착
+      return "win_" + (hash >>> 0).toString(16); 
+    }
+
+    // =========================================================================
+    // 메뉴바 만들기 공동함수
+    // =========================================================================
+
+    // ⭐️ 전역 최상단에 handleMenuClick 함수 선언
+    window.handleMenuClick = function(event, url, menuCode, targetOs, isExternal) {
+      if (event) event.stopPropagation();
+
+      // ⭐️ [추가] 메뉴바 또는 북마크 클릭 시 6시간 경과 여부를 최우선 확인하여 만료 시 즉시 자동 로그아웃
+      if (typeof APP_STATE !== 'undefined' && APP_STATE.isLoggedIn && typeof window.checkAndTouchClientSession === 'function') {
+        if (!window.checkAndTouchClientSession()) return;
+      }
+
+      const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+      
+      // ⭐️ [요청사항 반영] 오직 'Windows' 운영체제 여부로만 PC/모바일을 엄격하게 이분화
+      const isWindows = /Windows/i.test(ua);
+
+      // PC 전용 메뉴 방어 (Windows가 아니면 무조건 차단)
+      if (targetOs === 'PC' && !isWindows) {
+        if (typeof showModal === 'function') {
+          showModal("⛔ PC(Windows) 환경에서만 실행 가능한 메뉴입니다.<br><span style='font-size:12px; color:#888;'>현재 기기에서는 이용할 수 없습니다.</span>", { showCancel: false });
+        } else {
+          alert("⛔ PC(Windows) 환경에서만 실행 가능한 메뉴입니다.");
+        }
+        return;
+      }
+      
+      // 모바일 전용 메뉴 방어 (Windows이면 무조건 차단)
+      if (targetOs === 'MOBILE' && isWindows) {
+        if (typeof showModal === 'function') {
+          showModal("⛔ 모바일 환경에서만 실행 가능한 메뉴입니다.<br><span style='font-size:12px; color:#888;'>PC(Windows) 환경에서는 이용할 수 없습니다.</span>", { showCancel: false });
+        } else {
+          alert("⛔ 모바일 환경에서만 실행 가능한 메뉴입니다.");
+        }
+        return;
+      }
+
+      if (isExternal) {
+        // ⭐️ 외부 링크 처리: 해시 함수를 통해 안전한 새 창 이름(Target) 생성
+        const hexTargetName = typeof getUrlToHexHash === 'function' ? getUrlToHexHash(url) : url.replace(/[^a-zA-Z0-9]/g, '_');
+        window.open(url, hexTargetName);
+      } else {
+        // ⭐️ SPA 내부 이동 처리
+        if (typeof navigateTo === 'function' && menuCode) {
+          navigateTo(menuCode); 
+        } else {
+          if (typeof showOverlay === 'function') showOverlay(true);
+          window.open(url, '_top');
+        }
+      }
+    };  
+
+
+    // =========================================================================
+    // 클라이언트 사이드 캐싱 및 렌더링 로직 (공통 모듈)
+    // =========================================================================
+
+    // 외부에서 호출 가능한 초기화 함수
+    window.initMenuBarData = function(userHashId, currentSid, onComplete, forceRefresh) {
+      if (!userHashId) {
+        console.error("initMenuBarData: userHashId 값이 없습니다.");
+        if (onComplete) onComplete();
+        return;
+      }
+
+      // ⭐️ [SPA 해시 라우터 연동] 기존의 개별 로컬스토리지 및 구버전 syncMenuData 호출을 제거하고,
+      // SPA_CACHE.syncData("MENUBAR")를 사용하여 로컬 캐시 0초 선렌더링 후 서버 해시를 비교합니다.
+      if (typeof SPA_CACHE !== 'undefined') {
+        // ⭐️ 마지막 인자로 forceRefresh를 전달하여 필요시 로컬 캐시를 무시하고 서버에서 즉시 다시 받아오도록 설정
+        SPA_CACHE.syncData("MENUBAR", function(menuList, isFromCache) {
+          renderClientMenuBar(menuList, currentSid);
+          if (onComplete) {
+            onComplete();
+            onComplete = null;
+          }
+        }, forceRefresh); 
+      }
+    };
+
+
+    // 클라이언트 메뉴 렌더링 함수 (내부 전용)
+    function renderClientMenuBar(menuList, currentSid) {
+      const container = document.getElementById('dynamicMenuBar');
+      if (!container) return; 
+
+      if (!menuList || menuList.length === 0) {
+        container.innerHTML = '<div class="win-menu-item">접근 가능한 메뉴가 없습니다.</div>';
+        return;
+      }
+
+      // 메뉴 트리를 만들기 위해 구조화
+      const tree = {};
+      menuList.forEach(m => {
+        const parts = String(m.menuLevel || "").split('-');
+        if (parts.length < 4) return;
+        
+        const d1 = parts[1]; 
+        const d2 = parts[2]; 
+        const d3 = parts[3]; 
+
+        if (!tree[d1]) tree[d1] = { info: null, children: {} };
+
+        if (d2 === '000' && d3 === '000') {
+          tree[d1].info = m; 
+        } else if (d3 === '000') {
+          if (!tree[d1].children[d2]) tree[d1].children[d2] = { info: null, children: {} };
+          tree[d1].children[d2].info = m; 
+        } else {
+          if (!tree[d1].children[d2]) tree[d1].children[d2] = { info: null, children: {} };
+          tree[d1].children[d2].children[d3] = m; 
+        }
+      });
+
+      // 권한, URL, 기기 정보를 판단하여 클릭 이벤트를 생성
+      function getClickAttr(menu) {
+        if (!menu.isAllowed) {
+          return `onclick="if(typeof showModal === 'function') { showModal('⛔ 해당 메뉴에 대한 접근 권한이 없습니다.<br>', { showCancel: false }); } else { alert('⛔ 해당 메뉴에 대한 접근 권한이 없습니다.'); } event.stopPropagation();" style="color:#aaa; cursor:not-allowed;"`;
+        }
+
+        let linkType = parseInt(menu.linkType) || 0; 
+        let isExternal = (linkType === 1 || linkType === 2); 
+        
+        let finalUrl = "";
+        if (isExternal) {
+          finalUrl = menu.linkUrl || "";
+        } else {
+          const baseUrl = menu.linkUrl || "";
+          const separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+          finalUrl = baseUrl ? baseUrl + separator + "id=" + currentSid + "&code=" + menu.menuCd : "";
+        }
+
+        let targetOs = 'ALL';
+        if (linkType === 2 || linkType === 6) targetOs = 'PC';
+        if (linkType === 7) targetOs = 'MOBILE';
+
+        // ⭐️ 보안: XSS 방어를 위해 파라미터 이스케이프 및 작은따옴표 방어 적용
+        const safeUrl = String(escapeHtml(finalUrl)).replace(/'/g, "\\'");
+        const safeMenuCd = String(escapeHtml(menu.menuCd)).replace(/'/g, "\\'");
+
+        return `onclick="window.handleMenuClick(event, '${safeUrl}', '${safeMenuCd}', '${targetOs}', ${isExternal});"`;
+      }
+
+      // 메뉴정보를 판단하여 메뉴표시를 생성
+      // ⭐️ [수정] depth(단계)를 전달받아 2단계 이상에서 권한이 없으면 잠금 표시(🔒) 부착 및 PC 표기를 WIN으로 통일
+      function getDisplayName(menu, depth) {
+        let name = escapeHtml(menu.shortName || menu.menuName); 
+        let linkType = parseInt(menu.linkType) || 0;
+        if (linkType === 2 || linkType === 6) name += " <span style='font-size:10px; color:#888;'>(WIN)</span>";
+        if (linkType === 7) name += " <span style='font-size:10px; color:#888;'>(M)</span>";
+        
+        if (depth >= 2 && !menu.isAllowed) {
+          name = "🔒 " + name;
+        }
+        return name;
+      }
+
+      let html = '';
+      const keys1 = Object.keys(tree).sort();
+      
+      for (const k1 of keys1) {
+        const node1 = tree[k1];
+        if (!node1.info) continue;
+
+        const m1 = node1.info;
+        // ⭐️ 1레벨(대메뉴)은 권한이 없으면 아예 비노출
+        if (!m1.isAllowed) continue;
+
+        const keys2 = Object.keys(node1.children).sort();
+        const hasChildren1 = keys2.length > 0;
+        
+        html += `<div class="win-menu-item" ${!hasChildren1 ? getClickAttr(m1) : ''}>${getDisplayName(m1, 1)}`;
+
+        if (hasChildren1) {
+          html += `\n  <div class="win-dropdown">\n`;
+          for (const k2 of keys2) {
+            const node2 = node1.children[k2];
+            if (!node2.info) continue;
+            
+            const m2 = node2.info;
+            const keys3 = Object.keys(node2.children).sort();
+            const hasChildren2 = keys3.length > 0;
+            
+            // ⭐️ 2단계 메뉴: 권한이 없거나(!m2.isAllowed) 3단계 하위 메뉴가 없으면 클릭 시 권한 경고/실행 속성을 부여하고,
+            // 권한이 없을 때는 하위 3단계 메뉴 트리도 열리지 않도록 차단하여 비활성화 처리합니다.
+            const canOpenSub = hasChildren2 && m2.isAllowed;
+            html += `    <div class="win-dropdown-item" ${!canOpenSub ? getClickAttr(m2) : ''}><span>${getDisplayName(m2, 2)}</span>`;
+
+            if (canOpenSub) {
+              html += ` <span class="win-arrow">▶</span>\n      <div class="win-sub-dropdown">\n`;
+              for (const k3 of keys3) {
+                const m3 = node2.children[k3];
+                // ⭐️ 3단계 메뉴: 권한 없으면 잠금 표시(🔒)와 함께 비활성화 속성(getClickAttr) 자동 적용
+                html += `        <div class="win-dropdown-item" ${getClickAttr(m3)}><span>${getDisplayName(m3, 3)}</span></div>\n`;
+              }
+              html += `      </div>\n`;
+            }
+            html += `    </div>\n`;
+          }
+          html += `  </div>\n`;
+        }
+        html += `</div>\n`;
+      }
+
+      // 1레벨 권한 필터링 결과 표시할 대메뉴가 하나도 없는 경우의 예외 처리
+      if (!html) {
+        container.innerHTML = '<div class="win-menu-item" style="color:#888; cursor:default;">표시할 메뉴가 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = html;
+      
+      // ⭐️ DOM 업데이트 완료 후 한 번만 호버 이벤트 바인딩 실행
+      bindMenuHoverEvents();
+    }
+
+
+    // ⭐ 동적 렌더링 후 호출될 호버 이벤트 바인딩 함수
+    function bindMenuHoverEvents() {
+      const menuItems = document.querySelectorAll('.win-menu-item');
+      
+      menuItems.forEach(item => {
+        // 기존 이벤트 리스너 중복 방지를 위해 클론 또는 안전장치를 쓰면 좋으나,
+        // innerHTML로 재생성되었으므로 새로 붙여도 안전함.
+        item.addEventListener('mouseenter', function() {
+          const dropdown = this.querySelector('.win-dropdown');
+          if (!dropdown) return;
+
+          dropdown.classList.remove('align-right');
+          
+          const rect = item.getBoundingClientRect();
+          const dropdownWidth = 120; 
+          const windowWidth = window.innerWidth;
+          
+          if (rect.left + dropdownWidth > windowWidth) {
+            dropdown.classList.add('align-right');
+          }
+        });
+
+        // ⭐️ [성능 수정] 마우스 진입 시마다 하위 메뉴 리스너가 중복 등록되지 않도록 최초 1회만 분리하여 바인딩
+        const dropdown = item.querySelector('.win-dropdown');
+        if (dropdown) {
+          const subItems = dropdown.querySelectorAll('.win-dropdown-item');
+          subItems.forEach(subItem => {
+            subItem.addEventListener('mouseenter', function(e) {
+              const subDropdown = this.querySelector('.win-sub-dropdown');
+              if (!subDropdown) return;
+
+              subDropdown.classList.remove('align-left');
+              this.classList.remove('arrow-flip');
+              
+              const subRect = this.getBoundingClientRect();
+              const subDropdownWidth = 100; 
+              const windowWidth = window.innerWidth;
+              const isParentAlignRight = dropdown.classList.contains('align-right');
+              
+              if (isParentAlignRight || (subRect.right + subDropdownWidth > windowWidth)) {
+                subDropdown.classList.add('align-left');
+                this.classList.add('arrow-flip');
+              }
+            });
+          });
+        }
+      });
+    }
+
+
+    // =========================================================================
+    // 일반적인 공통 유틸리티
+    // =========================================================================
+
+    // 공동으로 사용하는 화면보호(로딩) 함수
+    function showOverlay(isShow) {
+      const overlay = document.getElementById('screen-overlay');
+      if (overlay) isShow ? overlay.classList.add('active') : overlay.classList.remove('active');
+    }
+
+    // 공동으로 사용하는 모달 함수
+    function showModal(message, options) {
+        options = options || {};
+        const modal = document.getElementById('customErrorModal');
+        const msgElement = document.getElementById('errorMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        if (!modal || !msgElement) return;
+
+        msgElement.innerHTML = message;
+        modal.style.display = 'block';
+
+        confirmBtn.onclick = function() {
+            closeErrorModal();
+            if (options.onConfirm) options.onConfirm();
+        };
+        cancelBtn.style.display = options.showCancel ? 'inline-block' : 'none';
+        cancelBtn.onclick = closeErrorModal;
+        confirmBtn.style.display = options.hideAllBtn ? 'none' : 'inline-block';
+    }
+
+    function closeErrorModal() {
+        const modal = document.getElementById('customErrorModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+  </script>
+
+
+  <script>
+    /**
+     * [추가] SCA_S_index.gs 및 BASE_L_index.gs의 진입점 로직 통합
+     * 브라우저 로드 즉시 SCA_BASE.FN_system_check()를 호출하여 CFG 객체를 생성합니다.
+     */
+    const CFG = (typeof SCA_BASE !== 'undefined' && typeof SCA_BASE.FN_system_check === 'function')
+      ? SCA_BASE.FN_system_check()
+      : FN_system_check();
+
+    // [추가] 헤더 기관명, 타이틀, 카피라이트, 배경 심볼 마크를 DOM에 즉시 주입
+    document.title = (CFG.schoolName || "OO") + " 클라우드";
+    const headerSchoolEl = document.getElementById("headerSchoolName");
+    if (headerSchoolEl) headerSchoolEl.innerText = CFG.schoolName || "";
+    const footerCopyEl = document.getElementById("footerCopyright");
+    if (footerCopyEl) footerCopyEl.innerText = CFG.copyRight || "";
+    if (CFG.schoolMark2) {
+      document.documentElement.style.setProperty(
+        "--school-mark-bg",
+        `url('https://lh3.googleusercontent.com/d/${CFG.schoolMark2}')`
+      );
+    }
+
+    const APP_STATE = {
+      isLoggedIn: false,
+      copyright: CFG.copyRight || "",      
+      sid: CFG.sid || "",
+      guestHashId: CFG.guestHashId || "",
+      userHashId: CFG.userHashId || "",
+      portalCode: CFG.portalCode || "",
+      mainmenuCode: CFG.mainmenuCode || CFG.portalCode || "",
+      logoutCode: CFG.logoutCode || "",
+      cloudUrl: CFG.cloudUrl || "",
+      supaUrl: CFG.supaUrl || "",
+      supaAnonKey: CFG.supaAnonKey || "",
+      // [수정] 임시 학교 코드 기본값 "OOO" 적용
+      schoolCode: CFG.schoolCode || "OOO",
+      userName: "",
+      userLevel: "A",
+      currentCode: CFG.portalCode || "",
+      currentSubUrl: ""
+    };
+
+    window.SUPA_DIRECT = {
+      isReady: function() { return Boolean(APP_STATE.supaUrl && APP_STATE.supaAnonKey); },
+      rpc: async function(fnName, params) {
+        const url = `${APP_STATE.supaUrl.replace(/\/$/, "")}/rest/v1/rpc/${fnName}`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "apikey": APP_STATE.supaAnonKey,
+            "Authorization": "Bearer " + APP_STATE.supaAnonKey,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(params || {})
+        });
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || `HTTP ${response.status}`);
+        }
+        return await response.json();
+      }
+    };
+
+    // ⭐️ [추가] 클라이언트 측 6시간(21600초) 세션 만료 즉시 감지 및 활동 시간 갱신 헬퍼
+    const CLIENT_SESSION_LIMIT_MS = 6 * 60 * 60 * 1000;
+
+    window.checkAndTouchClientSession = function() {
+      if (!APP_STATE.isLoggedIn && !sessionStorage.getItem("SPA_SESSION")) return true;
+      try {
+        const raw = sessionStorage.getItem("SPA_SESSION");
+        if (!raw) return true;
+        const parsed = JSON.parse(raw);
+        const now = Date.now();
+        if (parsed.lastActiveAt && (now - parsed.lastActiveAt > CLIENT_SESSION_LIMIT_MS)) {
+          window.forceClientLogout("⛔ 로그인 세션이 만료되었습니다.\n다시 로그인해 주세요.");
+          return false;
+        }
+        parsed.lastActiveAt = now;
+        sessionStorage.setItem("SPA_SESSION", JSON.stringify(parsed));
+        return true;
+      } catch (e) {
+        return true;
+      }
+    };
+
+    // ⭐️ [수정] 1차/2차 분할 해시(HASH1, HASH2)를 제거하고 단일 해시(HASH) 비교 구조로 통합
+    const SPA_CACHE = {
+      getKey: function(type, key) {
+
+        const safeKey = String(key).toUpperCase();
+        // ⭐️ [수정] 공지사항은 사용자 인증(Hash)과 무관하게 공통(Global) 캐시 키 사용
+        if (safeKey.includes("GONGJI")) {
+          return `SPA_GLOBAL_${type}_${safeKey}`;
+        }
+
+        const activeHash = APP_STATE.isLoggedIn ? APP_STATE.userHashId : APP_STATE.guestHashId;
+        return `SPA_${activeHash}_${type}_${String(key).toUpperCase()}`;
+      },
+      get: function(type, key) {
+        try {
+          if (type === "DATA") {
+            const hash = localStorage.getItem(this.getKey(type, key + "_HASH")) || "";
+            const raw = localStorage.getItem(this.getKey(type, key + "_DATA"));
+            return { hash: hash, data: raw ? JSON.parse(raw) : null };
+          } else {
+            const ver = localStorage.getItem(this.getKey(type, key + "_VER")) || "";
+            const raw = localStorage.getItem(this.getKey(type, key + "_DATA"));
+            return { version: ver, data: raw ? JSON.parse(raw) : null };
+          }
+        } catch (e) {
+          return type === "DATA" ? { hash: "", data: null } : { version: "", data: null };
+        }
+      },
+      set: function(type, key, verOrHash, data) {
+        try {
+          if (type === "DATA") {
+            localStorage.setItem(this.getKey(type, key + "_HASH"), String(verOrHash || ""));
+            localStorage.setItem(this.getKey(type, key + "_DATA"), JSON.stringify(data));
+          } else {
+            localStorage.setItem(this.getKey(type, key + "_VER"), String(verOrHash || ""));
+            localStorage.setItem(this.getKey(type, key + "_DATA"), JSON.stringify(data));
+          }
+        } catch (e) {}
+      },
+
+      // ⭐️ [수정] 포털메뉴, 메인메뉴, 메뉴바, 공지사항 전용 One-Trip 단일 해시 동기화
+      syncData: function(targetKey, onRenderCallback, forceRefresh) {
+        const cached = this.get("DATA", targetKey);
+        // ⭐️ [추가] 이 syncData 호출이 직접 로딩을 켰는지 여부를 기록 (다른 모듈의 DB 로딩 보호)
+        let mySyncOverlay = false;
+        
+        if (!forceRefresh && cached.data !== null) {
+          onRenderCallback(cached.data, true); 
+        } else {
+          // 로컬 데이터가 없으면 통신 완료될 때까지 로딩 작동
+          // ⭐️ [수정] 상단 공지사항(GONGJI) 백그라운드 동기화는 메인 모듈의 로딩 제어를 방해하지 않도록 제외
+          if (targetKey !== "GONGJI" && typeof showOverlay === "function") {
+            showOverlay(true);
+            mySyncOverlay = true;
+          }
+        }
+
+        const clientHash = forceRefresh ? "" : cached.hash;
+
+        const handleSyncResponse = res => {
+          // ⭐️ 마스터 리셋 1: 데이터 통신이 끝나면 무조건 로딩 종료
+          // ⭐️ [수정] 무조건 끄지 않고, 로컬 캐시가 없어서 이 함수가 직접 켠 로딩일 때만 종료
+          if (mySyncOverlay && typeof showOverlay === "function") showOverlay(false);
+          
+          if (!res || !res.result) {
+            if (res && res.isExpired && typeof window.forceClientLogout === "function") {
+              window.forceClientLogout(res.msg);
+            }
+            return;
+          }
+          
+          // ⭐️ [수정] 변경사항이 있을 때만(CHANGED 또는 is_updated === true) 로컬 캐시 갱신 및 리렌더링
+          if (res.status === "CHANGED" || res.is_updated === true) {
+            const newHash = res.hash || res.db_hash || res.hash1 || "";
+            this.set("DATA", targetKey, newHash, res.return_data);
+            onRenderCallback(res.return_data, false); 
+          }
+        };
+
+        const handleSyncFailure = err => {
+          // ⭐️ 마스터 리셋 2: 데이터 통신 에러 발생 시에도 무조건 로딩 종료 방어
+          // ⭐️ [수정] 이 함수가 직접 켠 로딩일 때만 종료
+          if (mySyncOverlay && typeof showOverlay === "function") showOverlay(false);
+          console.error(targetKey + " 동기화 오류:", err);
+        };
+
+        // [수정] 비보안자료 로컬스토리지 + Supabase 직거래 전용 호출 (rpc_spadata_sync 및 "OOO" 적용, GAS 우회 제거)
+        window.SUPA_DIRECT.rpc("rpc_spadata_sync", {
+          p_target_key: targetKey,
+          p_client_hash1: clientHash,
+          p_client_hash2: clientHash,
+          p_sid: APP_STATE.sid || "",
+          p_school_code: APP_STATE.schoolCode || "OOO"
+        }).then(handleSyncResponse).catch(handleSyncFailure);
+      },
+
+      findMenuMeta: function(code) {
+        const sKey = String(code || "").trim().toLowerCase();
+        const allBookmarks = [].concat(
+          this.get("DATA", "BOOKMARK_PORTAL").data || [], 
+          this.get("DATA", "BOOKMARK_MAIN").data || [],
+          this.get("DATA", "USERBOOKMARK").data || [],
+          this.get("DATA", "MENUBAR").data || []
+        );
+        const found = allBookmarks.find(m => (m.menuCd || "").toLowerCase() === sKey);
+        if (found) {
+          return { menuCd: found.menuCd, menuName: found.displayMenuName || found.menuName || found.shortName };
+        }
+        return null;
+      }
+    };
+
+    function navigateTo(targetCode, forceRefresh) {
+      if (!targetCode) return;
+
+      // ⭐️ [추가] 로그인 상태에서 다른 메뉴나 메인메뉴 클릭 시 6시간 경과 여부 최우선 검사
+      if (APP_STATE.isLoggedIn && typeof window.checkAndTouchClientSession === "function") {
+        if (!window.checkAndTouchClientSession()) return;
+      }
+
+      APP_STATE.currentCode = targetCode;
+
+      if (APP_STATE.isLoggedIn && typeof window.initMenuBarData === "function") {
+        if (!forceRefresh) {
+          window.initMenuBarData(APP_STATE.userHashId, APP_STATE.sid);
+        }
+      }
+
+      const appContainer = document.getElementById("spa-app-container");
+      const contentBox = document.getElementById("spa-module-content");
+      
+      const localMeta = SPA_CACHE.findMenuMeta(targetCode);
+      const fileKey = localMeta && localMeta.menuCd ? localMeta.menuCd : targetCode; 
+      if (localMeta && localMeta.linkUrlSub !== undefined) APP_STATE.currentSubUrl = localMeta.linkUrlSub;
+
+      const cachedHtml = SPA_CACHE.get("HTML", fileKey);
+      const clientHash = forceRefresh ? "" : cachedHtml.version;
+      let isPreRendered = false;
+
+      if (!forceRefresh && cachedHtml.data) {
+        // 로컬 HTML 자료가 있을 경우 즉시 세팅
+        if (localMeta && localMeta.menuName) document.getElementById("pageTitleText").innerText = localMeta.menuName;
+        // ⭐️ [추가] 초기 HTML에 기본으로 켜져 있던 오버레이를 일단 내림 (이후 injectModuleHtml 내부에서 DB 통신이 필요한 모듈이면 스스로 다시 켬)
+        if (typeof showOverlay === "function") showOverlay(false);
+        injectModuleHtml(cachedHtml.data);
+        isPreRendered = true;
+      } else {
+        // 로컬 HTML이 없으면 화면 흐리게 처리 후 로딩 작동
+        if (appContainer) appContainer.style.opacity = "0.2";
+        if (typeof showOverlay === "function") showOverlay(true);
+      }
+
+
+      const handleModuleResponse = function(res) {
+        // ⭐️ [안전 방어] appContainer 존재 여부 체크 후 투명도 복구
+        if (appContainer) appContainer.style.opacity = "1"; 
+        
+        if (!res || !res.result) {
+          if (typeof showOverlay === 'function') showOverlay(false);
+          if (isPreRendered && contentBox) contentBox.innerHTML = ""; 
+          
+          if (res && res.isExpired && typeof window.forceClientLogout === 'function') {
+            window.forceClientLogout(res.msg || "⛔ 로그인 세션이 만료되었습니다.");
+            return;
+          }
+          
+          // ⭐️ [핵심] 서버가 보낸 에러 메시지(res.msg)를 최우선으로 출력
+          const errMsg = (res && res.msg && String(res.msg).trim() !== "") 
+                         ? res.msg 
+                         : "⛔ 존재하지 않거나 접근할 수 없는 메뉴입니다.";
+                         
+          const returnCode = (APP_STATE.isLoggedIn && APP_STATE.sid) ? APP_STATE.mainmenuCode : APP_STATE.portalCode;
+          
+          if (typeof showModal === 'function') {
+            showModal(errMsg, { 
+              showCancel: false,
+              onConfirm: function() { navigateTo(returnCode); } 
+            });
+          } else { 
+            alert(errMsg); 
+            navigateTo(returnCode); 
+          }
+          return;
+        }
+
+        document.getElementById("pageTitleText").innerText = res.menuName;
+        APP_STATE.currentSubUrl = res.linkUrlSub || "";
+
+        if (res.status === "CHANGED") {
+          SPA_CACHE.set("HTML", res.menuCd, res.version, res.html);
+          if (fileKey && fileKey !== res.menuCd) SPA_CACHE.set("HTML", fileKey, res.version, res.html);
+          if (typeof showOverlay === 'function') showOverlay(false);
+          injectModuleHtml(res.html);
+        }
+      };
+
+      const handleModuleFailure = function(err) {
+        // ⭐️ 마스터 리셋 4: HTML 통신 에러 발생 시 무조건 로딩 종료 방어
+        if (typeof showOverlay === "function") showOverlay(false);
+        if (appContainer) appContainer.style.opacity = "1";
+        
+        const returnCode = (APP_STATE.isLoggedIn && APP_STATE.sid) ? APP_STATE.mainmenuCode : APP_STATE.portalCode;
+        
+        if (typeof showModal === "function") {
+            showModal("⛔ 모듈 로드 실패: " + err, {
+                showCancel: false,
+                onConfirm: function() { navigateTo(returnCode); }
+            });
+        } else { 
+            alert("⛔ 모듈 로드 실패: " + err);
+            navigateTo(returnCode);
+        }
+      };
+
+      // [수정] SPA 모듈 로컬스토리지 + Supabase 직거래 전용 호출 (rpc_spamodule_load 및 "OOO" 적용, GAS 폴백 제거)
+      window.SUPA_DIRECT.rpc("rpc_spamodule_load", {
+        p_target_code: targetCode,
+        p_sid: APP_STATE.sid || "",
+        p_client_hash: clientHash || "",
+        p_school_code: APP_STATE.schoolCode || "OOO"
+      }).then(handleModuleResponse).catch(handleModuleFailure);
+    }  
+    
+
+
+    function injectModuleHtml(htmlStr) {
+      const container = document.getElementById("spa-module-content");
+      if (!container) return;
+
+      window.onSpaModuleMount = null;
+      container.innerHTML = htmlStr;
+
+      const scripts = container.querySelectorAll("script");
+      const loadScript = function(index) {
+        if (index >= scripts.length) {
+          if (typeof window.onSpaModuleMount === "function") {
+            window.onSpaModuleMount(APP_STATE.sid, APP_STATE.currentSubUrl);
+          }
+          return;
+        }
+
+        const oldScript = scripts[index];
+        const newScript = document.createElement("script");
+        
+        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.textContent = oldScript.textContent;
+
+        if (newScript.hasAttribute('src')) {
+          newScript.onload = () => loadScript(index + 1);
+          newScript.onerror = () => loadScript(index + 1);
+          document.body.appendChild(newScript);
+        } else {
+          document.body.appendChild(newScript);
+          loadScript(index + 1);
+        }
+        document.body.removeChild(newScript); 
+      };
+
+      loadScript(0);
+    }
+
+    window.refreshCurrentSpaModule = function() {
+      SPA_CACHE.syncData("GONGJI", gongTable, true);
+      if (APP_STATE.isLoggedIn && typeof window.initMenuBarData === "function") {
+        window.initMenuBarData(APP_STATE.userHashId, APP_STATE.sid, null, true);
+      }
+      navigateTo(APP_STATE.currentCode, true);
+    };
+
+    window.applySpaLoginSuccess = function(loginData) {
+      APP_STATE.isLoggedIn = true;
+      APP_STATE.sid = loginData.sid;
+      APP_STATE.userHashId = loginData.userHashId;
+      APP_STATE.userName = loginData.userName;
+      APP_STATE.userLevel = loginData.userLevel || "A";
+
+      // ⭐️ [수정] 로그인 성공 시점에 마지막 활동 시각(lastActiveAt)을 함께 저장하여 6시간 기준점 생성
+      sessionStorage.setItem("SPA_SESSION", JSON.stringify({
+        sid: loginData.sid,
+        userHashId: loginData.userHashId,
+        userName: loginData.userName,
+        userLevel: APP_STATE.userLevel,
+        lastActiveAt: Date.now()
+      }));
+
+      document.getElementById("info-bar_1").style.display = "none";
+      document.getElementById("info-bar_2").style.display = "flex";
+      document.getElementById("loggedInUserName").innerText = `👤 ${APP_STATE.userName}님 반갑습니다.`;
+
+      if (typeof window.initMenuBarData === "function") {
+        window.initMenuBarData(APP_STATE.userHashId, APP_STATE.sid);
+      }
+      navigateTo(APP_STATE.mainmenuCode, true);
+    };
+
+    function handleSpaLogout() {
+      const modal = document.getElementById("customErrorModal");
+      const messageArea = document.getElementById("errorMessage");
+      const confirmBtn = document.getElementById("modalConfirmBtn");
+      const cancelBtn = document.getElementById("modalCancelBtn");
+
+      if (!modal || !messageArea || !confirmBtn || !cancelBtn) return;
+
+      messageArea.innerHTML = 
+        "<strong style='font-size: 18px; color: #1a202c;'>로그아웃과 동시에 <br>로컬캐시 자료를 정리하시겠습니까?</strong><br><br>" +
+        "<div style='text-align: left; font-size: 13px; color: #4a5568; background: #f7fafc; padding: 15px; border-radius: 8px; line-height: 1.6;'>" +
+        "<b>• 예 (Y)</b> : 로컬캐시정리(개인기기가 아닐경우 권장)<br>" +
+        "<b>• 아니오 (N)</b> : 로그아웃만처리(개인기기일때 권장)</div>";
+      
+      confirmBtn.innerText = "예 (Y)";
+      cancelBtn.innerText = "아니오 (N)";
+      confirmBtn.style.background = "#e53e3e"; 
+      cancelBtn.style.display = "inline-block"; 
+      modal.style.display = "block"; 
+
+      let savedSession = {};
+      try { savedSession = JSON.parse(sessionStorage.getItem("SPA_SESSION") || "{}"); } catch(e) {}
+      
+      const oldSid = APP_STATE.sid || savedSession.sid || "";
+      const oldUserId = APP_STATE.userHashId || savedSession.userHashId || "";
+      const oldUserName = APP_STATE.userName || savedSession.userName || "";
+
+      const resetModalUI = () => {
+        modal.style.display = "none";
+        confirmBtn.innerText = "확인";
+        confirmBtn.style.background = "#34495e";
+        cancelBtn.style.display = "none";
+      };
+
+      confirmBtn.onclick = function() {
+        resetModalUI();
+        if (typeof showOverlay === "function") showOverlay(true);
+
+        APP_STATE.isLoggedIn = false;
+        sessionStorage.removeItem("SPA_SESSION");
+        localStorage.clear(); 
+
+        // [수정] 로그아웃 직거래 호출 (rpc_auth_logout 및 "OOO" 적용, GAS 우회 제거)
+        window.SUPA_DIRECT.rpc("rpc_auth_logout", {
+          p_sid: oldSid,
+          p_fallback_id: oldUserId,
+          p_fallback_name: oldUserName,
+          p_school_code: APP_STATE.schoolCode || "OOO"
+        }).finally(function() {
+          window.top.location.href = "https://www.google.com";
+        });
+      };
+
+      cancelBtn.onclick = function() {
+        resetModalUI();
+        
+        // [수정] 로그아웃 직거래 호출 (rpc_auth_logout 및 "OOO" 적용, GAS 우회 제거)
+        window.SUPA_DIRECT.rpc("rpc_auth_logout", {
+          p_sid: oldSid,
+          p_fallback_id: oldUserId,
+          p_fallback_name: oldUserName,
+          p_school_code: APP_STATE.schoolCode || "OOO"
+        }).catch(function() {});
+
+        APP_STATE.isLoggedIn = false;
+        APP_STATE.sid = "";
+        APP_STATE.userHashId = APP_STATE.guestHashId;
+        APP_STATE.userName = "";
+        APP_STATE.userLevel = "A";
+        sessionStorage.removeItem("SPA_SESSION");
+        
+        document.getElementById("info-bar_2").style.display = "none";
+        document.getElementById("info-bar_1").style.display = "flex";
+        const menuBar = document.getElementById("dynamicMenuBar");
+        if (menuBar) menuBar.innerHTML = "";
+
+        navigateTo(APP_STATE.portalCode, true);
+      };
+    }
+
+
+    // ⭐️ [수정] 외부 리소스 다운로드를 기다리는 window.onload 대신 즉시 렌더링 이벤트로 변경
+    document.addEventListener("DOMContentLoaded", function() {
+      // [추가] SCA_S_index.gs의 doGet() 시스템 사용 가능 여부(기간/상태) 체크 수행
+      if (!CFG.result) {
+        if (typeof SCA_BASE !== 'undefined' && typeof SCA_BASE.FN_error_create === 'function') {
+          SCA_BASE.FN_error_create(CFG);
+        } else {
+          FN_error_create(CFG);
+        }
+        return;
+      }
+
+      const saved = sessionStorage.getItem("SPA_SESSION");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.sid && parsed.userHashId) {
+            // ⭐️ [추가] F5(새로고침) 시 6시간 경과 여부를 즉시 체크하여 만료되었으면 자동 로그아웃 발동
+            if (parsed.lastActiveAt && (Date.now() - parsed.lastActiveAt > CLIENT_SESSION_LIMIT_MS)) {
+              SPA_CACHE.syncData("GONGJI", function(data) {
+                gongTable(data);
+                const gongContainer = document.getElementById("gongContainer");
+                if (gongContainer) gongContainer.style.display = "flex";
+              });
+              window.forceClientLogout("⛔ 로그인 세션이 만료되었습니다.\n다시 로그인해 주세요.");
+              return;
+            }
+
+            parsed.lastActiveAt = Date.now();
+            sessionStorage.setItem("SPA_SESSION", JSON.stringify(parsed));
+
+            APP_STATE.isLoggedIn = true;
+            APP_STATE.sid = parsed.sid;
+            APP_STATE.userHashId = parsed.userHashId;
+            APP_STATE.userName = parsed.userName;
+            APP_STATE.userLevel = parsed.userLevel || "A";
+            document.getElementById("info-bar_1").style.display = "none";
+            document.getElementById("info-bar_2").style.display = "flex";
+            document.getElementById("loggedInUserName").innerText = `👤 ${APP_STATE.userName}님 반갑습니다.`;
+            if (typeof window.initMenuBarData === "function") window.initMenuBarData(APP_STATE.userHashId, APP_STATE.sid);
+          }
+        } catch (e) {}
+      }
+
+      // ⭐️ 로컬 스토리지 데이터를 즉시 화면에 뿌리고, 백그라운드에서 해시 검사(통신) 진행
+      SPA_CACHE.syncData("GONGJI", function(data) {
+        gongTable(data);
+        const gongContainer = document.getElementById("gongContainer");
+        if (gongContainer) gongContainer.style.display = "flex";
+      });
+
+      navigateTo(APP_STATE.isLoggedIn ? APP_STATE.mainmenuCode : APP_STATE.portalCode);
+    });
+
+
+
+    function gongTable(dataArray) {
+      const thead = document.getElementById("gongHead");
+      const tbody = document.getElementById("gongBody");
+      if (!thead || !tbody) return;
+
+      if (dataArray && !Array.isArray(dataArray) && dataArray.data) dataArray = dataArray.data;
+      if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3">📢 등록된 공지사항이 없습니다.</td></tr>`;
+        return;
+      }
+
+      let startIndex = (dataArray[0] && (String(dataArray[0][2]).includes("긴급여부") || String(dataArray[0][3]).includes("제목"))) ? 1 : 0;
+      if (dataArray.length <= startIndex) {
+        tbody.innerHTML = `<tr><td colspan="3">📢 등록된 공지사항이 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      for (let i = startIndex; i < dataArray.length; i++) {
+        const row = dataArray[i];
+        if (!row || row.length < 3) continue;
+
+        const type = row[2] || "공지없음"; 
+        const title = row[3] || "-";
+        const dateF = row[5] ? String(row[5]).split("T")[0] : "";
+        const dateT = row[6] ? String(row[6]).split("T")[0] : "";
+        const dateRange = (dateF && dateT) ? `${dateF} ~ ${dateT}` : "-";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="td-gu ${type.includes('공지') ? 'type-urgent' : 'type-text'}">${type}</td>
+          <td class="td-je">${title}</td>
+          <td class="td-date">${dateRange}</td>
+        `;
+        tr.onclick = () => {
+          tbody.querySelectorAll("tr").forEach(r => r.classList.remove("selected"));
+          tr.classList.add("selected");
+          openGongModal(row);
+        };
+        tbody.appendChild(tr);
+      }
+    }
+
+    function openGongModal(rowData) {
+      const modal = document.getElementById("customErrorModal");
+      const messageArea = document.getElementById("errorMessage");
+      const confirmBtn = document.getElementById("modalConfirmBtn");
+      if (!modal || !messageArea || !confirmBtn) return;
+      
+      let dateF = rowData[5] ? String(rowData[5]).split("T")[0] : "";
+      let dateT = rowData[6] ? String(rowData[6]).split("T")[0] : "";
+      const dateRange = (dateF && dateT) ? `${dateF} ~ ${dateT}` : (dateF || dateT || "-");
+
+      const details = [
+        { label: "구    분", value: rowData[2] || "-" },
+        { label: "제    목", value: (typeof escapeHtml === 'function' ? escapeHtml(rowData[3]) : rowData[3]) || "-" },
+        { label: "내    용", value: (typeof escapeHtml === 'function' ? escapeHtml(rowData[4]) : rowData[4]) || "-" },
+        { label: "공지기간", value: dateRange }
+      ];
+      
+      let contentHtml = `
+        <div style="text-align: left; margin-bottom: 15px; border-bottom: 2px solid #0056b3; padding-bottom: 8px;">
+          <strong style="font-size: 18px; color: #1a202c;">📢 공지사항 상세보기</strong>
+        </div>
+        <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+      `;
+      details.forEach(item => {
+        const valueStyle = (item.label === "구    분" && String(item.value).includes("공지")) ? "color: red; font-weight: bold;" : "";
+        contentHtml += `
+          <tr style="border-bottom: 1px solid #edf2f7;">
+            <td style="text-align: center; padding: 12px 10px; background: #f7fafc; font-weight: bold; width: 25%; border-right: 1px solid #edf2f7; color: #2d3748; white-space: nowrap;">${item.label}</td>
+            <td style="text-align: left; padding: 12px 10px; width: 80%; white-space: pre-wrap; word-break: break-all; color: #4a5568; ${valueStyle}">${item.value}</td>
+          </tr>`;
+      });
+      contentHtml += `</table>`;
+      messageArea.innerHTML = contentHtml;
+      modal.style.display = "block"; 
+      confirmBtn.onclick = () => { modal.style.display = "none"; };
+    }
+
+    let isForcingLogout = false;
+    // ⭐️ [수정] 세션 만료 시 로컬캐시 삭제 질문(예/아니오)을 띄우지 않고, 알림 확인 즉시 세션을 정리하고 포털 초기화면으로 자동 로그아웃 처리
+    window.forceClientLogout = function(msg) {
+      if (isForcingLogout) return; 
+      isForcingLogout = true;
+
+      if (typeof showOverlay === "function") showOverlay(false);
+
+      let savedSession = {};
+      try { savedSession = JSON.parse(sessionStorage.getItem("SPA_SESSION") || "{}"); } catch(e) {}
+      const oldSid = APP_STATE.sid || savedSession.sid || "";
+      const oldUserId = APP_STATE.userHashId || savedSession.userHashId || "";
+      const oldUserName = APP_STATE.userName || savedSession.userName || "";
+
+      // 백그라운드에서 DB 세션 정리 및 로그아웃 로그 기록
+      if (oldSid) {
+        // [수정] 강제 로그아웃 시에도 Supabase 직거래 호출 (rpc_auth_logout 및 "OOO" 적용)
+        window.SUPA_DIRECT.rpc("rpc_auth_logout", {
+          p_sid: oldSid,
+          p_fallback_id: oldUserId,
+          p_fallback_name: oldUserName,
+          p_school_code: APP_STATE.schoolCode || "OOO"
+        }).catch(function() {});
+      }
+
+      // 클라이언트 로그인 상태 즉시 초기화
+      APP_STATE.isLoggedIn = false;
+      APP_STATE.sid = "";
+      APP_STATE.userHashId = APP_STATE.guestHashId;
+      APP_STATE.userName = "";
+      APP_STATE.userLevel = "A";
+      sessionStorage.removeItem("SPA_SESSION");
+
+      const infoBar1 = document.getElementById("info-bar_1");
+      const infoBar2 = document.getElementById("info-bar_2");
+      if (infoBar2) infoBar2.style.display = "none";
+      if (infoBar1) infoBar1.style.display = "flex";
+
+      const menuBar = document.getElementById("dynamicMenuBar");
+      if (menuBar) menuBar.innerHTML = "";
+
+      const contentBox = document.getElementById("spa-module-content");
+      if (contentBox) contentBox.innerHTML = "";
+
+      const logoutAlertMsg = msg || "⛔ 로그인 세션이 만료되었습니다.\n다시 로그인해 주세요.";
+
+      const moveToPortal = function() {
+        isForcingLogout = false;
+        navigateTo(APP_STATE.portalCode, true);
+      };
+
+      if (typeof showModal === 'function') {
+        showModal(String(logoutAlertMsg).replace(/\n/g, "<br>"), {
+          showCancel: false,
+          hideAllBtn: false,
+          onConfirm: moveToPortal
+        });
+      } else {
+        alert(logoutAlertMsg);
+        moveToPortal();
+      }
+    };
+
+    // =========================================================================
+    // [추가] 기존 github_index.txt의 서비스 워커 등록 및 PWA 바로가기 설치 로직 통합
+    // =========================================================================
+
+    // 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('서비스 워커 등록 성공:', reg))
+          .catch(err => console.log('서비스 워커 등록 실패:', err));
+      });
+    }
+
+    // 디바이스 및 브라우저 분석 함수
+    function analyzeBrowser() {
+      const ua = navigator.userAgent.toLowerCase();
+      return {
+        isMobile: /iphone|ipad|ipod|android/.test(ua),
+        isIOS: /iphone|ipad|ipod/.test(ua),
+        isAndroid: /android/.test(ua),
+        isSamsung: /samsungbrowser/.test(ua),
+        isFirefox: /firefox|fxios/.test(ua),
+        isSafari: /safari/.test(ua) && !/chrome|crios|edg|samsungbrowser|naver|kakao/.test(ua),
+        isInApp: /kakao|naver|fbav|line/.test(ua)
+      };
+    }
+
+    let deferredPrompt = null;
+    const installBanner = document.getElementById('install-banner');
+    const installBtn = document.getElementById('install-btn');
+    const bannerText = document.getElementById('banner-text');
+    const manualGuideModal = document.getElementById('manual-guide-modal');
+    const guideMessage = document.getElementById('guideMessage');
+
+    // 설치 준비 완료 이벤트
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault(); 
+      deferredPrompt = e;  
+      
+      const browser = analyzeBrowser();
+
+      if (browser.isMobile) {
+        bannerText.innerHTML = '📱 <b>클라우드</b>를<br>핸드폰 홈 화면에 앱으로 설치하세요!';
+        installBtn.innerText = '앱 설치하기';
+      } else {
+        bannerText.innerHTML = '💻 <b>클라우드</b>를<br>바탕화면에 바로가기로 설치하세요!';
+        installBtn.innerText = '바로가기 설치';
+      }
+    });
+
+    // 자동 설치 모달 내 [지금 설치하기] 버튼 클릭 동작
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        try {
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            installBanner.style.display = 'none';
+          }
+        } catch (error) {
+          console.error("설치 중 오류 발생:", error);
+        }
+        deferredPrompt = null;
+      } else {
+        installBanner.style.display = 'none';
+        showManualGuide();
+      }
+    });
+
+    // 설치 완료 이벤트
+    window.addEventListener('appinstalled', () => {
+      installBanner.style.display = 'none';
+      manualGuideModal.style.display = 'none';
+      const browser = analyzeBrowser();
+      if (browser.isMobile) {
+        alert('홈 화면에 앱이 성공적으로 설치되었습니다!');
+      } else {
+        alert('바탕화면에 바로가기가 성공적으로 설치되었습니다!');
+      }
+    });
+
+    // 수동 설치 안내 모달 콘텐츠 생성 및 표출 함수
+    function showManualGuide() {
+      const browser = analyzeBrowser();
+      manualGuideModal.style.display = 'flex'; 
+
+      if (browser.isMobile) {
+        if (browser.isInApp) {
+          guideMessage.innerHTML = '⚠️ <b>현재 인앱 브라우저 환경입니다.</b><br><br>오른쪽 위 메뉴(⋮ 또는 ⋯)를 눌러 <b>"다른 브라우저로 열기"</b>를 선택하시면 홈 화면에 바로 설치 창이 나타납니다.';
+        } else if (browser.isIOS) {
+          if (browser.isSafari) {
+            guideMessage.innerHTML = '🍏 <b>아이폰 사파리 앱 추가</b><br><br>1. 하단 중앙의 <b>[공유하기]</b> 버튼(네모 박스 화살표)을 누릅니다.<br>2. 메뉴를 아래로 내려 <b>[홈 화면에 추가]->[웹 앱으로 열기] 끄기 후 추가</b>를 눌러주세요.';
+          } else {
+            guideMessage.innerHTML = '🍏 <b>아이폰 크롬/엣지 앱 추가</b><br><br>1. 주소창 주변의 <b>[공유하기]</b> 버튼을 누릅니다.<br>2. <b>[홈 화면에 추가]->[웹 앱으로 열기] 끄기 후 추가</b>를 선택해 주세요.';
+          }
+        } else if (browser.isSamsung) {
+          guideMessage.innerHTML = '📱 <b>삼성 인터넷 앱 추가</b><br><br>화면 우측 하단 메뉴(三) ➡️ <b>[현재 페이지 추가]</b> ➡️ <b>[홈 화면]</b>을 선택해 주세요.';
+        } else if (browser.isFirefox) {
+          guideMessage.innerHTML = '🦊 <b>파이어폭스 앱 추가</b><br><br>우측 하단 메뉴(⋮)를 누른 뒤 <b>[홈 화면에 추가]</b>를 눌러주세요.';
+        } else {
+          guideMessage.innerHTML = '📱 <b>핸드폰 홈 화면에 앱 추가</b><br><br>브라우저 메뉴에서 <b>[홈 화면에 추가]</b> 또는 <b>[바로가기 만들기]</b>를 선택해 주세요.';
+        }
+      } 
+      else {
+        if (browser.isFirefox) {
+          guideMessage.innerHTML = '🌐 <b>PC 파이어폭스 안내</b><br><br>파이어폭스는 바탕화면 바로가기 자동 설치를 지원하지 않습니다.<br><b>구글 크롬(Chrome)</b> 또는 <b>MS 엣지(Edge)</b>로 접속하시면 원클릭 설치가 가능합니다.';
+        } else {
+          guideMessage.innerHTML = '🌐 <b>바탕화면에 바로가기를 만드려면(자동설치불가시)?</b><br><br>' +
+            '1. 현재 브라우저 주소창 맨 오른쪽 끝을 확인해 주세요.<br>' +
+            '2. 모니터 모양 또는 더하기(+)가 붙은 <b>[앱 설치 아이콘]</b>을 누르시면 됩니다.<br><br>' +
+            '아이콘이 없다면(크롬) <b>우측 상단 메뉴(⋮) ➡️ [저장 및 공유] ➡️ [앱 설치]</b>를 눌러주세요.<br><br>' +
+            '아이콘이 없다면(엣지) <b>우측 상단 메뉴(...) ➡️ [기타도구] ➡️ [앱] ➡️ [앱설치]</b>를 눌러주세요.';
+        }
+      }
+    }
+
+    // [수정] iframe 제거로 인해 postMessage 없이도 바로가기앱설치 버튼이 즉시 작동하도록 직접 연결
+    function requestInstallModal() {
+      if (deferredPrompt) {
+        installBanner.style.display = 'flex'; 
+      } else {
+        showManualGuide(); 
+      }
+    } 
+  </script>
+
+
+</body>
+</html>
+
