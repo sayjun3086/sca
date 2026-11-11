@@ -2,7 +2,7 @@
 
 
 // sw.js 파일 내용
-const CACHE_NAME = 'scahscouns-v6'; // 👈 버전을 v1에서 v2로 변경하여 강제 업데이트 유도
+const CACHE_NAME = 'scahs-v1'; // 👈 버전을 v1에서 v2로 변경하여 강제 업데이트 유도
 const ASSETS = [
   './',                  /* 상대경로 점(.) 추가 */
   './index.html',        /* 상대경로 점(.) 추가 */
