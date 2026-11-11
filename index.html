@@ -897,8 +897,13 @@
       const footerCopyEl = document.getElementById("footerCopyright");
       if (footerCopyEl) footerCopyEl.innerText = CFG.copyRight || "";
       
+
       if (CFG.schoolMark2) {
-        document.documentElement.style.setProperty("--school-mark-bg", `url('https://lh3.googleusercontent.com/d/${CFG.schoolMark2}')`);
+        let markUrl = CFG.schoolMark2;
+        // 값에 점(.) 확장자나 http가 있으면 GitHub 로컬 파일 또는 외부 링크로 직접 인식
+        if (markUrl.includes('.') || markUrl.startsWith('http')) {
+          document.documentElement.style.setProperty("--school-mark-bg", `url('${markUrl}')`);
+        } 
       }
 
       APP_STATE = {
@@ -1245,6 +1250,4 @@
 
 </body>
 </html>
-
-
 
