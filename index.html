@@ -468,69 +468,24 @@
 
 
   <script>
-    /**
-     * [추가] SCA_S_index.gs 및 BASE_L_index.gs의 진입점 로직 통합
-     * 브라우저 로드 즉시 SCA_BASE.FN_system_check()를 호출하여 CFG 객체를 생성합니다.
-     */
-    const CFG = (typeof SCA_BASE !== 'undefined' && typeof SCA_BASE.FN_system_check === 'function')
-      ? SCA_BASE.FN_system_check()
-      : FN_system_check();
-
-    // [추가] 헤더 기관명, 타이틀, 카피라이트, 배경 심볼 마크를 DOM에 즉시 주입
-    document.title = (CFG.schoolName || "OO") + " 클라우드";
-    const headerSchoolEl = document.getElementById("headerSchoolName");
-    if (headerSchoolEl) headerSchoolEl.innerText = CFG.schoolName || "";
-    const footerCopyEl = document.getElementById("footerCopyright");
-    if (footerCopyEl) footerCopyEl.innerText = CFG.copyRight || "";
-    if (CFG.schoolMark2) {
-      document.documentElement.style.setProperty(
-        "--school-mark-bg",
-        `url('https://lh3.googleusercontent.com/d/${CFG.schoolMark2}')`
-      );
+    function FN_error_create(msg, schoolName) {
+      document.title = (schoolName || "OO학교") + ' 클라우드';
+      document.body.innerHTML = `
+        <div style="font-family: 'Pretendard', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; margin: 0; background: #f8fbf9;">
+          <div style="background: white; padding: 40px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; max-width: 320px; border: 1px solid #eee;">
+            <div style="font-size: 60px; margin-bottom: 20px;">🌿</div>
+            <div style="color: #1b4332; font-size: 18px; font-weight: 800; margin-bottom: 12px;">접속 제한 안내</div>
+            <div style="color: #c92a2a; font-size: 16px; font-weight: 500; line-height: 1.6; margin-bottom: 30px; word-break: keep-all; background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid #ffe3e3;">${msg}</div>
+            <div style="color: #666; font-size: 15px; line-height: 1.6; margin-bottom: 30px; word-break: keep-all;">안전한 서비스 이용을 위해<br>아래의 버튼을 눌러<br>현재 창을 닫아주시기 바랍니다.</div>
+            <button onclick="window.close(); window.top.close(); window.location.href='https://www.google.com';" style="background: #38b000; color: white; padding: 14px 40px; border-radius: 12px; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; border: none; cursor: pointer; width: 100%; font-size: 16px; box-sizing: border-box;">창 닫기</button>
+          </div>
+        </div>
+      `;
     }
 
-    const APP_STATE = {
-      isLoggedIn: false,
-      copyright: CFG.copyRight || "",      
-      sid: CFG.sid || "",
-      guestHashId: CFG.guestHashId || "",
-      userHashId: CFG.userHashId || "",
-      portalCode: CFG.portalCode || "",
-      mainmenuCode: CFG.mainmenuCode || CFG.portalCode || "",
-      logoutCode: CFG.logoutCode || "",
-      cloudUrl: CFG.cloudUrl || "",
-      supaUrl: CFG.supaUrl || "",
-      supaAnonKey: CFG.supaAnonKey || "",
-      // [수정] 임시 학교 코드 기본값 "OOO" 적용
-      schoolCode: CFG.schoolCode || "OOO",
-      userName: "",
-      userLevel: "A",
-      currentCode: CFG.portalCode || "",
-      currentSubUrl: ""
-    };
+    let APP_STATE = {};
+    let CFG = {};
 
-    window.SUPA_DIRECT = {
-      isReady: function() { return Boolean(APP_STATE.supaUrl && APP_STATE.supaAnonKey); },
-      rpc: async function(fnName, params) {
-        const url = `${APP_STATE.supaUrl.replace(/\/$/, "")}/rest/v1/rpc/${fnName}`;
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "apikey": APP_STATE.supaAnonKey,
-            "Authorization": "Bearer " + APP_STATE.supaAnonKey,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(params || {})
-        });
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(errText || `HTTP ${response.status}`);
-        }
-        return await response.json();
-      }
-    };
-
-    // ⭐️ [추가] 클라이언트 측 6시간(21600초) 세션 만료 즉시 감지 및 활동 시간 갱신 헬퍼
     const CLIENT_SESSION_LIMIT_MS = 6 * 60 * 60 * 1000;
 
     window.checkAndTouchClientSession = function() {
@@ -552,12 +507,10 @@
       }
     };
 
-    // ⭐️ [수정] 1차/2차 분할 해시(HASH1, HASH2)를 제거하고 단일 해시(HASH) 비교 구조로 통합
     const SPA_CACHE = {
       getKey: function(type, key) {
 
         const safeKey = String(key).toUpperCase();
-        // ⭐️ [수정] 공지사항은 사용자 인증(Hash)과 무관하게 공통(Global) 캐시 키 사용
         if (safeKey.includes("GONGJI")) {
           return `SPA_GLOBAL_${type}_${safeKey}`;
         }
@@ -592,17 +545,13 @@
         } catch (e) {}
       },
 
-      // ⭐️ [수정] 포털메뉴, 메인메뉴, 메뉴바, 공지사항 전용 One-Trip 단일 해시 동기화
       syncData: function(targetKey, onRenderCallback, forceRefresh) {
         const cached = this.get("DATA", targetKey);
-        // ⭐️ [추가] 이 syncData 호출이 직접 로딩을 켰는지 여부를 기록 (다른 모듈의 DB 로딩 보호)
         let mySyncOverlay = false;
         
         if (!forceRefresh && cached.data !== null) {
           onRenderCallback(cached.data, true); 
         } else {
-          // 로컬 데이터가 없으면 통신 완료될 때까지 로딩 작동
-          // ⭐️ [수정] 상단 공지사항(GONGJI) 백그라운드 동기화는 메인 모듈의 로딩 제어를 방해하지 않도록 제외
           if (targetKey !== "GONGJI" && typeof showOverlay === "function") {
             showOverlay(true);
             mySyncOverlay = true;
@@ -612,8 +561,6 @@
         const clientHash = forceRefresh ? "" : cached.hash;
 
         const handleSyncResponse = res => {
-          // ⭐️ 마스터 리셋 1: 데이터 통신이 끝나면 무조건 로딩 종료
-          // ⭐️ [수정] 무조건 끄지 않고, 로컬 캐시가 없어서 이 함수가 직접 켠 로딩일 때만 종료
           if (mySyncOverlay && typeof showOverlay === "function") showOverlay(false);
           
           if (!res || !res.result) {
@@ -623,7 +570,6 @@
             return;
           }
           
-          // ⭐️ [수정] 변경사항이 있을 때만(CHANGED 또는 is_updated === true) 로컬 캐시 갱신 및 리렌더링
           if (res.status === "CHANGED" || res.is_updated === true) {
             const newHash = res.hash || res.db_hash || res.hash1 || "";
             this.set("DATA", targetKey, newHash, res.return_data);
@@ -632,13 +578,10 @@
         };
 
         const handleSyncFailure = err => {
-          // ⭐️ 마스터 리셋 2: 데이터 통신 에러 발생 시에도 무조건 로딩 종료 방어
-          // ⭐️ [수정] 이 함수가 직접 켠 로딩일 때만 종료
           if (mySyncOverlay && typeof showOverlay === "function") showOverlay(false);
           console.error(targetKey + " 동기화 오류:", err);
         };
 
-        // [수정] 비보안자료 로컬스토리지 + Supabase 직거래 전용 호출 (rpc_spadata_sync 및 "OOO" 적용, GAS 우회 제거)
         window.SUPA_DIRECT.rpc("rpc_spadata_sync", {
           p_target_key: targetKey,
           p_client_hash1: clientHash,
@@ -667,7 +610,6 @@
     function navigateTo(targetCode, forceRefresh) {
       if (!targetCode) return;
 
-      // ⭐️ [추가] 로그인 상태에서 다른 메뉴나 메인메뉴 클릭 시 6시간 경과 여부 최우선 검사
       if (APP_STATE.isLoggedIn && typeof window.checkAndTouchClientSession === "function") {
         if (!window.checkAndTouchClientSession()) return;
       }
@@ -692,21 +634,17 @@
       let isPreRendered = false;
 
       if (!forceRefresh && cachedHtml.data) {
-        // 로컬 HTML 자료가 있을 경우 즉시 세팅
         if (localMeta && localMeta.menuName) document.getElementById("pageTitleText").innerText = localMeta.menuName;
-        // ⭐️ [추가] 초기 HTML에 기본으로 켜져 있던 오버레이를 일단 내림 (이후 injectModuleHtml 내부에서 DB 통신이 필요한 모듈이면 스스로 다시 켬)
         if (typeof showOverlay === "function") showOverlay(false);
         injectModuleHtml(cachedHtml.data);
         isPreRendered = true;
       } else {
-        // 로컬 HTML이 없으면 화면 흐리게 처리 후 로딩 작동
         if (appContainer) appContainer.style.opacity = "0.2";
         if (typeof showOverlay === "function") showOverlay(true);
       }
 
 
       const handleModuleResponse = function(res) {
-        // ⭐️ [안전 방어] appContainer 존재 여부 체크 후 투명도 복구
         if (appContainer) appContainer.style.opacity = "1"; 
         
         if (!res || !res.result) {
@@ -718,7 +656,6 @@
             return;
           }
           
-          // ⭐️ [핵심] 서버가 보낸 에러 메시지(res.msg)를 최우선으로 출력
           const errMsg = (res && res.msg && String(res.msg).trim() !== "") 
                          ? res.msg 
                          : "⛔ 존재하지 않거나 접근할 수 없는 메뉴입니다.";
@@ -749,7 +686,6 @@
       };
 
       const handleModuleFailure = function(err) {
-        // ⭐️ 마스터 리셋 4: HTML 통신 에러 발생 시 무조건 로딩 종료 방어
         if (typeof showOverlay === "function") showOverlay(false);
         if (appContainer) appContainer.style.opacity = "1";
         
@@ -766,7 +702,6 @@
         }
       };
 
-      // [수정] SPA 모듈 로컬스토리지 + Supabase 직거래 전용 호출 (rpc_spamodule_load 및 "OOO" 적용, GAS 폴백 제거)
       window.SUPA_DIRECT.rpc("rpc_spamodule_load", {
         p_target_code: targetCode,
         p_sid: APP_STATE.sid || "",
@@ -828,7 +763,6 @@
       APP_STATE.userName = loginData.userName;
       APP_STATE.userLevel = loginData.userLevel || "A";
 
-      // ⭐️ [수정] 로그인 성공 시점에 마지막 활동 시각(lastActiveAt)을 함께 저장하여 6시간 기준점 생성
       sessionStorage.setItem("SPA_SESSION", JSON.stringify({
         sid: loginData.sid,
         userHashId: loginData.userHashId,
@@ -889,7 +823,6 @@
         sessionStorage.removeItem("SPA_SESSION");
         localStorage.clear(); 
 
-        // [수정] 로그아웃 직거래 호출 (rpc_auth_logout 및 "OOO" 적용, GAS 우회 제거)
         window.SUPA_DIRECT.rpc("rpc_auth_logout", {
           p_sid: oldSid,
           p_fallback_id: oldUserId,
@@ -903,7 +836,6 @@
       cancelBtn.onclick = function() {
         resetModalUI();
         
-        // [수정] 로그아웃 직거래 호출 (rpc_auth_logout 및 "OOO" 적용, GAS 우회 제거)
         window.SUPA_DIRECT.rpc("rpc_auth_logout", {
           p_sid: oldSid,
           p_fallback_id: oldUserId,
@@ -927,25 +859,93 @@
       };
     }
 
-
-    // ⭐️ [수정] 외부 리소스 다운로드를 기다리는 window.onload 대신 즉시 렌더링 이벤트로 변경
-    document.addEventListener("DOMContentLoaded", function() {
-      // [추가] SCA_S_index.gs의 doGet() 시스템 사용 가능 여부(기간/상태) 체크 수행
-      if (!CFG.result) {
-        if (typeof SCA_BASE !== 'undefined' && typeof SCA_BASE.FN_error_create === 'function') {
-          SCA_BASE.FN_error_create(CFG);
-        } else {
-          FN_error_create(CFG);
-        }
+    document.addEventListener("DOMContentLoaded", async function() {
+      if (typeof G_supaUrl === 'undefined' || typeof G_supaAnonKey === 'undefined' || !G_supaUrl || !G_supaAnonKey) {
+        FN_error_create("클라우드 접속 정보가 누락되었습니다.", "OO학교");
         return;
       }
+
+      try {
+        const url = `${G_supaUrl.replace(/\/$/, "")}/rest/v1/rpc/rpc_hak_config_get`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "apikey": G_supaAnonKey,
+            "Authorization": "Bearer " + G_supaAnonKey,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ p_school_code: G_schoolCode || "OOO" })
+        });
+        
+        if (!response.ok) throw new Error("DB 통신 오류");
+        CFG = await response.json();
+
+        if (!CFG.result) {
+          FN_error_create(CFG.msg, CFG.schoolName);
+          return;
+        }
+      } catch (err) {
+        FN_error_create("학교 정보를 불러오지 못했습니다. (네트워크/DB 연결 실패)", "OO학교");
+        return;
+      }
+
+      document.title = (CFG.schoolName || "OO") + " 클라우드";
+      
+      const headerSchoolEl = document.getElementById("headerSchoolName");
+      if (headerSchoolEl) headerSchoolEl.innerText = CFG.schoolName || "";
+      
+      const footerCopyEl = document.getElementById("footerCopyright");
+      if (footerCopyEl) footerCopyEl.innerText = CFG.copyRight || "";
+      
+      if (CFG.schoolMark2) {
+        document.documentElement.style.setProperty("--school-mark-bg", `url('https://lh3.googleusercontent.com/d/${CFG.schoolMark2}')`);
+      }
+
+      APP_STATE = {
+        isLoggedIn: false,
+        copyright: CFG.copyRight || "",      
+        sid: "",
+        guestHashId: "23b0b5dc001221c5f3dfd68370f6f2648ee2081f9b009e51c86e0df39a3f2563",
+        userHashId: "",
+        portalCode: CFG.portalCode || "",
+        mainmenuCode: CFG.mainmenuCode || CFG.portalCode || "",
+        logoutCode: CFG.logoutCode || "",
+        cloudUrl: CFG.cloudUrl || "",
+        supaUrl: G_supaUrl || "",
+        supaAnonKey: G_supaAnonKey || "",
+        schoolCode: CFG.schoolCode || "OOO",
+        userName: "",
+        userLevel: "A",
+        currentCode: CFG.portalCode || "",
+        currentSubUrl: ""
+      };
+
+      window.SUPA_DIRECT = {
+        isReady: function() { return Boolean(APP_STATE.supaUrl && APP_STATE.supaAnonKey); },
+        rpc: async function(fnName, params) {
+          const url = `${APP_STATE.supaUrl.replace(/\/$/, "")}/rest/v1/rpc/${fnName}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { 
+              "apikey": APP_STATE.supaAnonKey, 
+              "Authorization": "Bearer " + APP_STATE.supaAnonKey, 
+              "Content-Type": "application/json" 
+            },
+            body: JSON.stringify(params || {})
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || `HTTP ${res.status}`);
+          }
+          return await res.json();
+        }
+      };
 
       const saved = sessionStorage.getItem("SPA_SESSION");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed && parsed.sid && parsed.userHashId) {
-            // ⭐️ [추가] F5(새로고침) 시 6시간 경과 여부를 즉시 체크하여 만료되었으면 자동 로그아웃 발동
             if (parsed.lastActiveAt && (Date.now() - parsed.lastActiveAt > CLIENT_SESSION_LIMIT_MS)) {
               SPA_CACHE.syncData("GONGJI", function(data) {
                 gongTable(data);
@@ -964,15 +964,18 @@
             APP_STATE.userHashId = parsed.userHashId;
             APP_STATE.userName = parsed.userName;
             APP_STATE.userLevel = parsed.userLevel || "A";
-            document.getElementById("info-bar_1").style.display = "none";
-            document.getElementById("info-bar_2").style.display = "flex";
-            document.getElementById("loggedInUserName").innerText = `👤 ${APP_STATE.userName}님 반갑습니다.`;
+            
+            const infoBar1 = document.getElementById("info-bar_1");
+            if (infoBar1) infoBar1.style.display = "none";
+            const infoBar2 = document.getElementById("info-bar_2");
+            if (infoBar2) infoBar2.style.display = "flex";
+            const loggedInUserEl = document.getElementById("loggedInUserName");
+            if (loggedInUserEl) loggedInUserEl.innerText = `👤 ${APP_STATE.userName}님 반갑습니다.`;
             if (typeof window.initMenuBarData === "function") window.initMenuBarData(APP_STATE.userHashId, APP_STATE.sid);
           }
         } catch (e) {}
       }
 
-      // ⭐️ 로컬 스토리지 데이터를 즉시 화면에 뿌리고, 백그라운드에서 해시 검사(통신) 진행
       SPA_CACHE.syncData("GONGJI", function(data) {
         gongTable(data);
         const gongContainer = document.getElementById("gongContainer");
@@ -981,8 +984,6 @@
 
       navigateTo(APP_STATE.isLoggedIn ? APP_STATE.mainmenuCode : APP_STATE.portalCode);
     });
-
-
 
     function gongTable(dataArray) {
       const thead = document.getElementById("gongHead");
@@ -1065,7 +1066,6 @@
     }
 
     let isForcingLogout = false;
-    // ⭐️ [수정] 세션 만료 시 로컬캐시 삭제 질문(예/아니오)을 띄우지 않고, 알림 확인 즉시 세션을 정리하고 포털 초기화면으로 자동 로그아웃 처리
     window.forceClientLogout = function(msg) {
       if (isForcingLogout) return; 
       isForcingLogout = true;
@@ -1078,9 +1078,7 @@
       const oldUserId = APP_STATE.userHashId || savedSession.userHashId || "";
       const oldUserName = APP_STATE.userName || savedSession.userName || "";
 
-      // 백그라운드에서 DB 세션 정리 및 로그아웃 로그 기록
       if (oldSid) {
-        // [수정] 강제 로그아웃 시에도 Supabase 직거래 호출 (rpc_auth_logout 및 "OOO" 적용)
         window.SUPA_DIRECT.rpc("rpc_auth_logout", {
           p_sid: oldSid,
           p_fallback_id: oldUserId,
@@ -1089,7 +1087,6 @@
         }).catch(function() {});
       }
 
-      // 클라이언트 로그인 상태 즉시 초기화
       APP_STATE.isLoggedIn = false;
       APP_STATE.sid = "";
       APP_STATE.userHashId = APP_STATE.guestHashId;
@@ -1131,7 +1128,6 @@
     // [추가] 기존 github_index.txt의 서비스 워커 등록 및 PWA 바로가기 설치 로직 통합
     // =========================================================================
 
-    // 서비스 워커 등록
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
@@ -1140,7 +1136,6 @@
       });
     }
 
-    // 디바이스 및 브라우저 분석 함수
     function analyzeBrowser() {
       const ua = navigator.userAgent.toLowerCase();
       return {
@@ -1161,7 +1156,6 @@
     const manualGuideModal = document.getElementById('manual-guide-modal');
     const guideMessage = document.getElementById('guideMessage');
 
-    // 설치 준비 완료 이벤트
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault(); 
       deferredPrompt = e;  
@@ -1177,7 +1171,6 @@
       }
     });
 
-    // 자동 설치 모달 내 [지금 설치하기] 버튼 클릭 동작
     installBtn.addEventListener('click', async () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
@@ -1196,7 +1189,6 @@
       }
     });
 
-    // 설치 완료 이벤트
     window.addEventListener('appinstalled', () => {
       installBanner.style.display = 'none';
       manualGuideModal.style.display = 'none';
@@ -1208,7 +1200,6 @@
       }
     });
 
-    // 수동 설치 안내 모달 콘텐츠 생성 및 표출 함수
     function showManualGuide() {
       const browser = analyzeBrowser();
       manualGuideModal.style.display = 'flex'; 
@@ -1243,7 +1234,6 @@
       }
     }
 
-    // [수정] iframe 제거로 인해 postMessage 없이도 바로가기앱설치 버튼이 즉시 작동하도록 직접 연결
     function requestInstallModal() {
       if (deferredPrompt) {
         installBanner.style.display = 'flex'; 
@@ -1253,7 +1243,8 @@
     } 
   </script>
 
-
 </body>
 </html>
+
+
 
