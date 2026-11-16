@@ -1,7 +1,7 @@
       
       
       
-/*<!-- LibBase_spa 내부에 포함된 21_Common_CSS.html -->*/
+/* LibBase_spa 내부에 포함된 21_Common_CSS.html */
 
 /* ------------[1. 프로그램 공통 부분 - 수정 금지]---------------------------------------------------------------------------------------------------------- */
 :root { 
@@ -253,7 +253,7 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
 
 /*============================================================================================================================================================*/
 
-/*<!-- LibBase_spa 내부에 포함된 22_Mobile_CSS.html -->*/
+/* LibBase_spa 내부에 포함된 22_Mobile_CSS.html */
 
 @media screen and (max-width: 600px) {
       
@@ -336,7 +336,7 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
 
 /*============================================================================================================================================================*/
 
-/* <!-- LibBase_spa 내부에 포함된 23_Tablet_CSS.html --> */
+/* LibBase_spa 내부에 포함된 23_Tablet_CSS.html */
 
 @media screen and (min-width: 601px) and (max-width: 1024px) {
       
