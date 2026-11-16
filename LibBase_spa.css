@@ -298,7 +298,8 @@ html, body { background-color: #ffffff !important; overflow-x: hidden !important
 .w-a6 { width: 55px !important; } .w-a7 { width: 64px !important; } .w-a8 { width: 73px !important; } .w-a9 { width: 83px !important; } 
 .w-b0 { width: 92px !important; } .w-b1 { width: 101px !important; } .w-b2 { width: 110px !important; } .w-b3 { width: 120px !important; } .w-b4 { width: 130px !important; } 
 .w-b5 { width: 138px !important; } .w-b6 { width: 147px !important; } .w-b7 { width: 156px !important; } .w-b8 { width: 165px !important; } .w-b9 { width: 175px !important; } 
-.w-c0 { width: 184px !important; }
+.w-c0 { width: 184px !important; } .w-c1 { width: 193px !important; } .w-c2 { width: 202px !important; } .w-c3 { width: 212px !important; } .w-c4 { width: 221px !important; }
+.w-c5 { width: 230px !important; } .w-c6 { width: 239px !important; } .w-c7 { width: 248px !important; } .w-c8 { width: 258px !important; } .w-c9 { width: 267px !important; }
 
 /* [개편] 범용 테이블 및 폼(.std-list-table, .std-form-table) */
 .detail-form { font-size: 11px; max-width: 100%; margin: 0 auto; background-color: white; }
