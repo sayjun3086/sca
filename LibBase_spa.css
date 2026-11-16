@@ -1,7 +1,7 @@
       
       
       
-<!-- LibBase_spa 내부에 포함된 21_Common_CSS.html -->
+/*<!-- LibBase_spa 내부에 포함된 21_Common_CSS.html -->*/
 
 /* ------------[1. 프로그램 공통 부분 - 수정 금지]---------------------------------------------------------------------------------------------------------- */
 :root { 
@@ -253,7 +253,7 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
 
 /*============================================================================================================================================================*/
 
-<!-- LibBase_spa 내부에 포함된 22_Mobile_CSS.html -->
+/*<!-- LibBase_spa 내부에 포함된 22_Mobile_CSS.html -->*/
 
 @media screen and (max-width: 600px) {
       
@@ -377,13 +377,6 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
   .gong-table th { font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
   .gong-table td { font-size: 12px; border-bottom: 1px solid #edf2f7; } 
 
-  /* [신규] 표준 유틸리티 클래스 */
-  .w-auto { width: auto !important; } 
-  .w-a1 { width: 10px !important; } .w-a2 { width: 20px !important; } .w-a3 { width: 30px !important; } .w-a4 { width: 40px !important; } .w-a5 { width: 50px !important; } 
-  .w-a6 { width: 60px !important; } .w-a7 { width: 70px !important; } .w-a8 { width: 80px !important; } .w-a9 { width: 90px !important; } 
-  .w-b0 { width: 100px !important; } .w-b1 { width: 110px !important; } .w-b2 { width: 120px !important; } .w-b3 { width: 130px !important; } .w-b4 { width: 140px !important; } 
-  .w-b5 { width: 150px !important; } .w-b6 { width: 160px !important; } .w-b7 { width: 170px !important; } .w-b8 { width: 180px !important; } .w-b9 { width: 190px !important; } 
-  .w-c0 { width: 200px !important; }
 
   /* --------------------------------------------------------------------------------------------------------------------------------------------------------------*/
   /* [신규] 표준 유틸리티 클래스 */
