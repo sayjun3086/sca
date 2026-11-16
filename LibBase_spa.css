@@ -255,75 +255,79 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
 
 <!-- LibBase_spa 내부에 포함된 22_Mobile_CSS.html -->
 
-/* --모바일 공통부분---------------------------------------------------------------------------------------------------------------------------------*/
-html, body { background-color: #ffffff !important; overflow-x: hidden !important; }
-.top-biz-header { padding: 10px 0; justify-content: flex-start; margin-bottom: 10px; }
-.header-container { padding: 0 5px; } 
-.header-logo { font-size: 20px; white-space: nowrap; letter-spacing: -0.5px; }
-.main-wrapper { padding: 15px; box-shadow: none; border-radius: 10px !important; } 
-.info-wrapper { padding: 10px 15px; box-shadow: none; border-radius: 10px !important; }   
-.info-bar { font-size: 11px;}
-.page-title { font-size: 16px !important; border-left-width: 4px !important; padding-left: 12px !important; }
+@media screen and (max-width: 600px) {
+      
+      /* --모바일 공통부분---------------------------------------------------------------------------------------------------------------------------------*/
+      html, body { background-color: #ffffff !important; overflow-x: hidden !important; }
+      .top-biz-header { padding: 10px 0; justify-content: flex-start; margin-bottom: 10px; }
+      .header-container { padding: 0 5px; } 
+      .header-logo { font-size: 20px; white-space: nowrap; letter-spacing: -0.5px; }
+      .main-wrapper { padding: 15px; box-shadow: none; border-radius: 10px !important; } 
+      .info-wrapper { padding: 10px 15px; box-shadow: none; border-radius: 10px !important; }   
+      .info-bar { font-size: 11px;}
+      .page-title { font-size: 16px !important; border-left-width: 4px !important; padding-left: 12px !important; }
+      
+      .btn-tree, .btn-logout { width: auto !important; padding: 6px 6px !important; font-size: 10px !important;}    
+      
+      /* --------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+      
+      /*---대시보드형메뉴 설정---------------------------------------------------------*/
+      
+      .section-title { font-size: 14px; font-weight: 700; margin-bottom: 15px; color: var(--text-main, #4a3338); border-bottom: 2px solid var(--cloud-btn-color, #4d89ca); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+      
+      .portalmenucontainer { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; width: 100%; max-width: 800px; margin: 0 auto;}
+      
+      .menucontainer { display: grid; grid-template-columns: repeat(1, 1fr); gap: 25px; width: 100%; }
+      
+      .menu-item { border-radius: 12px; height: 50px; }
+         
+      .menu-name { font-size: 13px; }
+      
+      
+      /* ------윈도우형 메뉴바 세팅-------------------------------------------------------------------------------------------------------------------------------- */ 
+      .win-toolbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; font-size: 11px; padding: 3px 10px; }
+      /* 3개 이상일 때: 3열로 고정하고 초과분은 2번째 줄로 넘김 */
+      .win-toolbar:has(> :nth-child(3)) { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); } 
+      
+      /* 공지사항 테이블 스타일 */
+      .gong-table th { padding: 2px 1px; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+      .gong-table td { padding: 2px 1px; font-size: 11px; } 
+      
+      /* --------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+      /* [신규] 표준 유틸리티 클래스 */
+      .w-auto { width: auto !important; } 
+      .w-a1 { width: 10px !important; } .w-a2 { width: 18px !important; } .w-a3 { width: 27px !important; }  .w-a4 { width: 36px !important; } .w-a5 { width: 46px !important; } 
+      .w-a6 { width: 55px !important; } .w-a7 { width: 64px !important; } .w-a8 { width: 73px !important; } .w-a9 { width: 83px !important; } 
+      .w-b0 { width: 92px !important; } .w-b1 { width: 101px !important; } .w-b2 { width: 110px !important; } .w-b3 { width: 120px !important; } .w-b4 { width: 130px !important; } 
+      .w-b5 { width: 138px !important; } .w-b6 { width: 147px !important; } .w-b7 { width: 156px !important; } .w-b8 { width: 165px !important; } .w-b9 { width: 175px !important; } 
+      .w-c0 { width: 184px !important; } .w-c1 { width: 193px !important; } .w-c2 { width: 202px !important; } .w-c3 { width: 212px !important; } .w-c4 { width: 221px !important; }
+      .w-c5 { width: 230px !important; } .w-c6 { width: 239px !important; } .w-c7 { width: 248px !important; } .w-c8 { width: 258px !important; } .w-c9 { width: 267px !important; }
+      
+      /* [개편] 범용 테이블 및 폼(.std-list-table, .std-form-table) */
+      .detail-form { font-size: 11px; max-width: 100%; margin: 0 auto; background-color: white; }
+      
+      .std-list-table th, .std-list-table td { font-size: 11px; padding: 6px 4px; }
+      .std-form-table th, .std-form-table td, .std-form-table input, .std-form-table textarea, .std-form-table select { font-size: 12px; padding: 4px; }
+      .btn-detail { font-size: 11px !important; }
+      .detail-header { font-size: 14px; }
+      
+      /*-----------------------------------------------------*/
+      /* [개편] 버튼 및 패널 디자인 */
+      .std-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
+      .std-panel input, .std-panel textarea, .std-panel select { width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 10px; font-size: 12px; }
+      .std-panel label { font-size: 12px; } 
+      
+      .action-btn-group2 { gap: 15px; margin: 10px 0; }    
+      .btn-close, .btn-add, .btn-update, .btn-delete { padding: 10px 15px; }  
+      
+      /* 공통 버튼 글자 크기 및 최소 너비 일괄 지정 */
+      .btn-detail, .btn-close, .btn-add, .btn-update, .btn-delete, .btn-red, .btn-green, .btn-blue, .btn-yellow, .btn-pink, .btn-orange { font-size: 12px; min-width: 70px; }
+      
+      /*-----------------------------------------------------*/
+      /* 모바일에서 특정 열 숨기기 유틸리티 */
+      .hide-mobile { display: none !important; }
 
-.btn-tree, .btn-logout { width: auto !important; padding: 6px 6px !important; font-size: 10px !important;}    
-
-/* --------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-
-/*---대시보드형메뉴 설정---------------------------------------------------------*/
-
-.section-title { font-size: 14px; font-weight: 700; margin-bottom: 15px; color: var(--text-main, #4a3338); border-bottom: 2px solid var(--cloud-btn-color, #4d89ca); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-
-.portalmenucontainer { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; width: 100%; max-width: 800px; margin: 0 auto;}
-
-.menucontainer { display: grid; grid-template-columns: repeat(1, 1fr); gap: 25px; width: 100%; }
-
-.menu-item { border-radius: 12px; height: 50px; }
-   
-.menu-name { font-size: 13px; }
-
-
-/* ------윈도우형 메뉴바 세팅-------------------------------------------------------------------------------------------------------------------------------- */ 
-.win-toolbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; font-size: 11px; padding: 3px 10px; }
-/* 3개 이상일 때: 3열로 고정하고 초과분은 2번째 줄로 넘김 */
-.win-toolbar:has(> :nth-child(3)) { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); } 
-
-/* 공지사항 테이블 스타일 */
-.gong-table th { padding: 2px 1px; font-size: 13px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
-.gong-table td { padding: 2px 1px; font-size: 11px; } 
-
-/* --------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/* [신규] 표준 유틸리티 클래스 */
-.w-auto { width: auto !important; } 
-.w-a1 { width: 10px !important; } .w-a2 { width: 18px !important; } .w-a3 { width: 27px !important; }  .w-a4 { width: 36px !important; } .w-a5 { width: 46px !important; } 
-.w-a6 { width: 55px !important; } .w-a7 { width: 64px !important; } .w-a8 { width: 73px !important; } .w-a9 { width: 83px !important; } 
-.w-b0 { width: 92px !important; } .w-b1 { width: 101px !important; } .w-b2 { width: 110px !important; } .w-b3 { width: 120px !important; } .w-b4 { width: 130px !important; } 
-.w-b5 { width: 138px !important; } .w-b6 { width: 147px !important; } .w-b7 { width: 156px !important; } .w-b8 { width: 165px !important; } .w-b9 { width: 175px !important; } 
-.w-c0 { width: 184px !important; } .w-c1 { width: 193px !important; } .w-c2 { width: 202px !important; } .w-c3 { width: 212px !important; } .w-c4 { width: 221px !important; }
-.w-c5 { width: 230px !important; } .w-c6 { width: 239px !important; } .w-c7 { width: 248px !important; } .w-c8 { width: 258px !important; } .w-c9 { width: 267px !important; }
-
-/* [개편] 범용 테이블 및 폼(.std-list-table, .std-form-table) */
-.detail-form { font-size: 11px; max-width: 100%; margin: 0 auto; background-color: white; }
-
-.std-list-table th, .std-list-table td { font-size: 11px; padding: 6px 4px; }
-.std-form-table th, .std-form-table td, .std-form-table input, .std-form-table textarea, .std-form-table select { font-size: 12px; padding: 4px; }
-.btn-detail { font-size: 11px !important; }
-.detail-header { font-size: 14px; }
-
-/*-----------------------------------------------------*/
-/* [개편] 버튼 및 패널 디자인 */
-.std-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
-.std-panel input, .std-panel textarea, .std-panel select { width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 10px; font-size: 12px; }
-.std-panel label { font-size: 12px; } 
-
-.action-btn-group2 { gap: 15px; margin: 10px 0; }    
-.btn-close, .btn-add, .btn-update, .btn-delete { padding: 10px 15px; }  
-
-/* 공통 버튼 글자 크기 및 최소 너비 일괄 지정 */
-.btn-detail, .btn-close, .btn-add, .btn-update, .btn-delete, .btn-red, .btn-green, .btn-blue, .btn-yellow, .btn-pink, .btn-orange { font-size: 12px; min-width: 70px; }
-
-/*-----------------------------------------------------*/
-/* 모바일에서 특정 열 숨기기 유틸리티 */
-.hide-mobile { display: none !important; }
+}      
 
 
 
@@ -333,7 +337,9 @@ html, body { background-color: #ffffff !important; overflow-x: hidden !important
 /*============================================================================================================================================================*/
 
 /* <!-- LibBase_spa 내부에 포함된 23_Tablet_CSS.html --> */
+
 @media screen and (min-width: 601px) and (max-width: 1024px) {
+      
   /* --테블릿 공통부분---------------------------------------------------------------------------------------------------------------------------------*/
   html, body { background-color: #ffffff !important; overflow-x: hidden !important; }
   .top-biz-header { padding: 10px 0; justify-content: flex-start; margin-bottom: 10px; }
@@ -395,6 +401,7 @@ html, body { background-color: #ffffff !important; overflow-x: hidden !important
 
   /* 태블릿에서 특정 열 숨기기 유틸리티 */
   .hide-tablet { display: none !important; }
+      
 }
 
 
