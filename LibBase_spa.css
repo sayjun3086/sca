@@ -240,13 +240,22 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
 .btn-orange:hover { background: #f97316; color: #fff; border-color: #f97316; }
 .btn-orange:disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; border-color: #ccc; }
 
+/* Gray Button */
+.btn-gray { padding: 6px 14px; background: #fff; border: 1.5px solid #6c757d; border-radius: 6px; font-weight: bold; cursor: pointer; color: #555; transition: 0.2s; }
+.btn-gray:hover { background: #6c757d; color: #fff; border-color: #6c757d; }
+.btn-gray:disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; border-color: #ccc; }
+
+/* Dark Blue Button */
+.btn-darkblue { padding: 6px 14px; background: #fff; border: 1.5px solid #1e3a8a; border-radius: 6px; font-weight: bold; cursor: pointer; color: #555; transition: 0.2s; }
+.btn-darkblue:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
+.btn-darkblue:disabled { background-color: #e0e0e0; color: #999; cursor: not-allowed; border-color: #ccc; }
+
 /*--------------------------------------------------------------------------------------------------*/
 /* 공통 버튼 글자 크기 일괄 지정 */
-.btn-detail, .btn-close, .btn-add, .btn-update, .btn-delete, .btn-red, .btn-green, .btn-blue, .btn-yellow, .btn-pink, .btn-orange { font-size: 13px; min-width: 120px;}
+.btn-detail, .btn-close, .btn-add, .btn-update, .btn-delete, .btn-red, .btn-green, .btn-blue, .btn-yellow, .btn-pink, .btn-orange, .btn-gray, .btn-darkblue { font-size: 13px; min-width: 120px;}
 
 /* pc에서 특정 열 숨기기 유틸리티 */
 .hide-pc { display: none !important; }
-
 
 
 
@@ -319,7 +328,7 @@ body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color);
       .btn-close, .btn-add, .btn-update, .btn-delete { padding: 10px 15px; }  
       
       /* 공통 버튼 글자 크기 및 최소 너비 일괄 지정 */
-      .btn-detail, .btn-close, .btn-add, .btn-update, .btn-delete, .btn-red, .btn-green, .btn-blue, .btn-yellow, .btn-pink, .btn-orange { font-size: 12px; min-width: 70px; }
+      .btn-detail, .btn-close, .btn-add, .btn-update, .btn-delete, .btn-red, .btn-green, .btn-blue, .btn-yellow, .btn-pink, .btn-orange, .btn-gray, .btn-darkblue { font-size: 12px; min-width: 70px; }
       
       /*-----------------------------------------------------*/
       /* 모바일에서 특정 열 숨기기 유틸리티 */
