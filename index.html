@@ -922,7 +922,12 @@
         userName: "",
         userLevel: "A",
         currentCode: CFG.portalCode || "",
-        currentSubUrl: ""
+        currentSubUrl: "",
+        // ⭐️ [추가] 게시판·문서함 용량/건수 제한 설정값 연동
+        boardMaxFileMb: Number(CFG.boardMaxFileMb ?? 10),
+        boardMaxPostCnt: Number(CFG.boardMaxPostCnt ?? 100),
+        webhardMaxFileMb: Number(CFG.webhardMaxFileMb ?? 10),
+        webhardMaxTotalGb: Number(CFG.webhardMaxTotalGb ?? 0.5)
       };
 
       window.SUPA_DIRECT = {
